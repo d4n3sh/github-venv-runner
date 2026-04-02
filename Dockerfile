@@ -35,14 +35,20 @@ USER runner
 WORKDIR /home/runner
 
 # Download and install GitHub Actions runner
-# Use a known stable version with retry logic
+# Must run as root for installdependencies.sh
+USER root
 RUN mkdir -p /home/runner/actions-runner && \
     cd /home/runner/actions-runner && \
     curl -L -f -o actions-runner-linux-x64.tar.gz \
     https://github.com/actions/runner/releases/download/v2.320.0/actions-runner-linux-x64-2.320.0.tar.gz && \
     tar xzf ./actions-runner-linux-x64.tar.gz && \
     rm actions-runner-linux-x64.tar.gz && \
-    /home/runner/actions-runner/bin/installdependencies.sh
+    /home/runner/actions-runner/bin/installdependencies.sh && \
+    chown -R runner:runner /home/runner/actions-runner && \
+    chown -R runner:runner /home/runner
+
+# Switch back to runner user
+USER runner
 
 # Copy entrypoint script
 COPY --chown=runner:runner entrypoint.sh /home/runner/entrypoint.sh
