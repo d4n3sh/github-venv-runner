@@ -1,7 +1,8 @@
 FROM rockylinux:9
 
 # Install system dependencies and enable EPEL for Python 3.12
-RUN dnf update -y && dnf install -y \
+# Use --allowerasing to resolve package conflicts (curl-minimal vs curl)
+RUN dnf update -y && dnf install -y --allowerasing \
     epel-release \
     git \
     curl \
