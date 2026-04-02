@@ -35,10 +35,11 @@ USER runner
 WORKDIR /home/runner
 
 # Download and install GitHub Actions runner
+# Use a known stable version with retry logic
 RUN mkdir -p /home/runner/actions-runner && \
     cd /home/runner/actions-runner && \
-    curl -o actions-runner-linux-x64.tar.gz -L \
-    https://github.com/actions/runner/releases/download/v2.415.0/actions-runner-linux-x64-2.415.0.tar.gz && \
+    curl -L -f -o actions-runner-linux-x64.tar.gz \
+    https://github.com/actions/runner/releases/download/v2.320.0/actions-runner-linux-x64-2.320.0.tar.gz && \
     tar xzf ./actions-runner-linux-x64.tar.gz && \
     rm actions-runner-linux-x64.tar.gz && \
     /home/runner/actions-runner/bin/installdependencies.sh

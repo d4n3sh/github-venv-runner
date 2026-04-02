@@ -13,6 +13,7 @@
 - **Python Virtual Environment Management**: Creates isolated venv instances with specific dependency sets
 - **Container Infrastructure**: Dockerfile and docker-compose.yml for self-hosted runner deployment
 - **Artifact Management**: Venv artifacts compressed as tar.gz and distributed via GitHub releases
+- **GitHub Actions Runner**: v2.320.0 (latest stable for Rocky Linux 9)
 
 ### Development Flow
 

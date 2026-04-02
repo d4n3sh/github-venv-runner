@@ -122,7 +122,7 @@ jobs:
 - **Build Tools**: gcc, make, OpenSSL, zlib, libffi
 - **Version Control**: Git
 - **Tools**: curl, wget, tar, gzip, sudo, jq
-- **GitHub Actions Runner**: v2.415.0
+- **GitHub Actions Runner**: v2.320.0 (latest stable version)
 
 ### Directory Structure
 
