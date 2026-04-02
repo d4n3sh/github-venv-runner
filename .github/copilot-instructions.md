@@ -9,47 +9,87 @@
 ### Key Components
 
 - **GitHub Actions Workflows**: YAML-based pipelines defined in `.github/workflows/`
-- **On-Premises Runner**: Uses self-hosted GitHub Actions runners rather than GitHub-hosted runners
+- **On-Premises Runner**: Runs inside Rocky Linux 9 Docker container via Docker Compose
 - **Python Virtual Environment Management**: Creates isolated venv instances with specific dependency sets
-- **Artifact Management**: Likely produces distributable venv artifacts or reports
+- **Container Infrastructure**: Dockerfile and docker-compose.yml for self-hosted runner deployment
+- **Artifact Management**: Venv artifacts compressed as tar.gz and distributed via GitHub releases
 
 ### Development Flow
 
-1. Workflows trigger on events (push, pull_request, schedule)
-2. Jobs execute on the on-premises runner
-3. Python environments are provisioned dynamically
-4. Dependencies are installed and isolated within venv
-5. Venv is compressed into tar.gz for distribution
-6. Packaged artifacts are uploaded and made available for download
+1. On-premises runner started in Rocky Linux container (docker-compose up)
+2. Container registers with GitHub (requires registration token)
+3. Workflows trigger on events (push to main, manual dispatch)
+4. Jobs execute on the containerized on-premises runner
+5. Python 3.12 environments are provisioned dynamically
+6. Dependencies installed within isolated venv
+7. Venv is compressed into tar.gz for distribution
+8. Artifacts uploaded as GitHub release assets with checksums
+
+### Deployment Architecture
+
+```
+GitHub Repository
+    ↓
+   [Push to main / Manual trigger]
+    ↓
+GitHub Actions Webhook
+    ↓
+On-Premises Docker Container (Rocky Linux 9)
+    ├─ GitHub Actions Runner v2.415.0
+    ├─ Python 3.12 + Ansible
+    ├─ Build Tools (gcc, make, etc.)
+    └─ 2-4 CPU cores, 2-4GB RAM (configurable)
+    ↓
+[Creates venv, Compresses tar.gz, Generates checksum]
+    ↓
+GitHub Release Assets
+    ├─ venv-py312-linux.tar.gz
+    └─ venv-py312-linux.tar.gz.sha256
+```
 
 ## Build, Test & Verification Commands
 
-Once implemented, typical commands will be:
+### Container Setup
+
+```bash
+# Build and start the runner container
+docker-compose up -d
+
+# View container logs
+docker-compose logs -f github-runner
+
+# Verify Python 3.12 and Ansible in container
+docker exec github-runner python3.12 --version
+docker exec github-runner python3.12 -m ansible --version
+
+# Stop the container
+docker-compose down
+```
+
+### Local Development (without container)
 
 ```bash
 # Validate workflow syntax
 python -m py_compile *.py  # if Python scripts are added
 
 # Test venv creation and packaging locally
-python -m venv test_env
-source test_env/bin/activate  # or test_env\Scripts\activate on Windows
+python3.12 -m venv test_env
+source test_env/bin/activate
 pip install --upgrade pip
 
 # Package venv into tar.gz
-tar --exclude='.git' -czf venv-py311-linux.tar.gz test_env/
+tar --exclude='.git' -czf venv-py312-linux.tar.gz test_env/
 
 # Verify tar.gz contents
-tar -tzf venv-py311-linux.tar.gz | head -20
+tar -tzf venv-py312-linux.tar.gz | head -20
 
 # Extract tar.gz for testing
-tar -xzf venv-py311-linux.tar.gz
+tar -xzf venv-py312-linux.tar.gz
 
 # Validate workflow files (requires act or gh cli)
 gh workflow list
-gh workflow run <workflow-name> --ref main
+gh workflow run build-venv --ref main
 ```
-
-Add these as you develop the project structure.
 
 ## Naming & File Structure Conventions
 
@@ -72,13 +112,15 @@ Add these as you develop the project structure.
 .github/
   workflows/
     build-venv.yml
-    test-venv.yml
   copilot-instructions.md
 scripts/
   build-env.py     # Helper scripts for venv management
   setup.sh         # Setup for on-premises runner
 docs/
   CONTRIBUTING.md
+  RUNNER_SETUP.md  # Rocky Linux container deployment guide
+Dockerfile        # Rocky Linux 9 with GitHub Actions runner
+docker-compose.yml # Container orchestration
 requirements.txt  # Base dependencies for the project itself
 README.md
 LICENSE
@@ -86,12 +128,25 @@ LICENSE
 
 ## Key Conventions
 
-### On-Premises Runner Specifics
+### On-Premises Runner Specifics (Docker Container)
 
-- **Runner labels**: Use self-hosted runners with clear labels (e.g., `self-hosted`, `linux`, `python-builder`)
-- **Environment setup**: Document any pre-requisites the runner must have (Python versions, OS, disk space)
-- **Timeout settings**: Adjust job timeouts appropriately—on-prem runners may be slower
-- **Resource constraints**: Consider memory/CPU limits when building large environments
+- **Container image**: Rocky Linux 9 with GitHub Actions Runner v2.415.0 pre-installed
+- **Runner registration**: Use `GITHUB_RUNNER_TOKEN` from repo Settings → Actions → Runners
+- **Environment variables**: Configure runner name, group, and labels via environment variables
+- **Storage**: Runner work directory mounted as named volume (`runner-work`)
+- **Networking**: Container isolated on internal Docker network
+- **Resource limits**: Configure CPU and memory limits in docker-compose.yml
+- **Container lifecycle**: Use `docker-compose up/down` for managing runner
+- **Logging**: Monitor with `docker-compose logs -f github-runner`
+- **Persistence**: Runner registration state persists in `runner-home` volume even after container restart
+
+### Container Deployment
+
+- **Dockerfile**: Builds Rocky Linux 9 image with Python 3.12, Ansible dependencies, and GitHub Actions runner
+- **docker-compose.yml**: Defines service configuration, volumes, networking, resource limits
+- **entrypoint.sh**: Automates runner registration and startup (requires environment variables)
+- **Setup**: See `RUNNER_SETUP.md` for detailed deployment instructions
+- **Multiple runners**: Deploy multiple container instances for parallel job execution
 
 ### Virtual Environment Best Practices
 

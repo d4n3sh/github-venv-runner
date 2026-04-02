@@ -1,6 +1,6 @@
 # github-venv-runner
 
-A GitHub Actions pipeline for building and distributing Python 3.12 virtual environments with Ansible.
+A GitHub Actions pipeline for building and distributing Python 3.12 virtual environments with Ansible, running on a Rocky Linux on-premises container.
 
 ## Overview
 
@@ -12,6 +12,26 @@ This project automates the creation of isolated Python virtual environments cont
 - Compressed tar.gz distribution via GitHub releases
 - SHA256 checksum verification
 - Linux-optimized builds
+- Rocky Linux container for on-premises self-hosted runners
+- Docker Compose for easy deployment
+
+## Quick Start: On-Premises Runner
+
+To run the GitHub Actions runner in a Rocky Linux container:
+
+```bash
+# 1. Get a registration token from Settings → Actions → Runners → New self-hosted runner
+export GITHUB_REPOSITORY=your-username/github-venv-runner
+export GITHUB_RUNNER_TOKEN=AAAAAA...your-token...
+
+# 2. Start the container
+docker-compose up -d
+
+# 3. Verify runner is connected (check GitHub Actions → Runners)
+docker-compose logs -f
+```
+
+For detailed setup instructions, see [RUNNER_SETUP.md](RUNNER_SETUP.md).
 
 ## Getting Started
 

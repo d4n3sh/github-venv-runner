@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  github-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: github-actions-runner
+    restart: unless-stopped
+    environment:
+      # Required: GitHub repository (owner/repo)
+      GITHUB_REPOSITORY: ${GITHUB_REPOSITORY}
+      
+      # Required: Runner registration token (get from repo Settings → Actions → Runners)
+      GITHUB_RUNNER_TOKEN: ${GITHUB_RUNNER_TOKEN}
+      
+      # Optional: Custom runner name (defaults to hostname)
+      GITHUB_RUNNER_NAME: ${GITHUB_RUNNER_NAME:-onprem-runner-1}
+      
+      # Optional: Runner group (defaults to 'Default')
+      GITHUB_RUNNER_GROUP: ${GITHUB_RUNNER_GROUP:-Default}
+      
+      # Optional: Custom labels for runner (defaults: self-hosted,linux,python3.12,rocky)
+      GITHUB_RUNNER_LABELS: ${GITHUB_RUNNER_LABELS:-self-hosted,linux,python3.12,rocky}
+    
+    volumes:
+      # Runner work directory (where jobs execute)
+      - runner-work:/home/runner/work
+      
+      # Optional: Persist runner registration state
+      - runner-home:/home/runner/actions-runner
+      
+      # Optional: Mount Docker socket to run Docker commands from jobs
+      # Uncomment the line below if you need Docker-in-Docker capability
+      # - /var/run/docker.sock:/var/run/docker.sock
+    
+    networks:
+      - github-runner
+    
+    # Resource limits (adjust based on your system)
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '2'
+          memory: 2G
+
+volumes:
+  runner-work:
+    driver: local
+  runner-home:
+    driver: local
+
+networks:
+  github-runner:
+    driver: bridge
