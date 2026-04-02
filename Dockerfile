@@ -1,16 +1,13 @@
 FROM rockylinux:9
 
-# Install system dependencies
+# Install system dependencies and enable EPEL for Python 3.12
 RUN dnf update -y && dnf install -y \
+    epel-release \
     git \
     curl \
     wget \
     tar \
     gzip \
-    python3.12 \
-    python3.12-devel \
-    python3.12-pip \
-    python3.12-venv \
     gcc \
     make \
     openssl-devel \
@@ -18,6 +15,13 @@ RUN dnf update -y && dnf install -y \
     libffi-devel \
     sudo \
     jq \
+    && dnf clean all
+
+# Install Python 3.12 from EPEL
+RUN dnf install -y \
+    python3.12 \
+    python3.12-devel \
+    python3.12-pip \
     && dnf clean all
 
 # Create runner user
