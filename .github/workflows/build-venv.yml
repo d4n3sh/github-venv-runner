@@ -16,10 +16,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.1.7
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.1.0
         with:
           python-version: '3.12'
 
@@ -60,7 +60,7 @@ jobs:
         run: echo "date=$(date -u +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
 
       - name: Create Release and Upload Assets
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.0.8
         with:
           tag_name: v${{ steps.timestamp.outputs.date }}-py312
           name: Venv Python 3.12 - ${{ steps.timestamp.outputs.date }}
