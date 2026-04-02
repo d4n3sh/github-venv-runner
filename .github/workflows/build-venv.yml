@@ -1,0 +1,112 @@
+name: Build and Release Venv
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: self-hosted
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Create virtual environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip setuptools wheel
+
+      - name: Install dependencies
+        run: |
+          source venv/bin/activate
+          pip install -r requirements.txt
+
+      - name: Verify venv
+        run: |
+          source venv/bin/activate
+          ansible --version
+          pip list
+
+      - name: Compress venv to tar.gz
+        run: |
+          tar --exclude='venv/.git' \
+              --exclude='venv/__pycache__' \
+              --exclude='venv/**/*.pyc' \
+              --exclude='venv/**/*.pyo' \
+              -czf venv-py312-linux.tar.gz venv/
+          ls -lh venv-py312-linux.tar.gz
+          sha256sum venv-py312-linux.tar.gz > venv-py312-linux.tar.gz.sha256
+
+      - name: Verify tar.gz integrity
+        run: |
+          tar -tzf venv-py312-linux.tar.gz | head -20
+          sha256sum -c venv-py312-linux.tar.gz.sha256
+
+      - name: Get current timestamp
+        id: timestamp
+        run: echo "date=$(date -u +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.timestamp.outputs.date }}-py312
+          release_name: Venv Python 3.12 - ${{ steps.timestamp.outputs.date }}
+          draft: false
+          prerelease: false
+          body: |
+            Automated build of Python 3.12 virtual environment with Ansible.
+            
+            **Contents:**
+            - Python 3.12
+            - Ansible and all dependencies
+            
+            **Usage:**
+            ```bash
+            tar -xzf venv-py312-linux.tar.gz
+            source venv/bin/activate
+            ansible --version
+            ```
+            
+            **Verification:**
+            ```bash
+            sha256sum -c venv-py312-linux.tar.gz.sha256
+            ```
+
+      - name: Upload tar.gz to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./venv-py312-linux.tar.gz
+          asset_name: venv-py312-linux.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload checksum to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./venv-py312-linux.tar.gz.sha256
+          asset_name: venv-py312-linux.tar.gz.sha256
+          asset_content_type: text/plain
+
+      - name: Clean up local files
+        if: always()
+        run: |
+          rm -f venv-py312-linux.tar.gz venv-py312-linux.tar.gz.sha256
+          rm -rf venv
