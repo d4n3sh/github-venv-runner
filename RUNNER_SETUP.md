@@ -117,8 +117,9 @@ jobs:
 ### What's Installed
 
 - **Base**: Rocky Linux 9
-- **Python**: 3.12 (with devel headers)
-- **Build Tools**: gcc, make, OpenSSL, zlib, libffi (for Python module compilation)
+- **Python**: 3.12 (via EPEL - Extra Packages for Enterprise Linux)
+- **Python Development**: Headers and devel packages for module compilation
+- **Build Tools**: gcc, make, OpenSSL, zlib, libffi
 - **Version Control**: Git
 - **Tools**: curl, wget, tar, gzip, sudo, jq
 - **GitHub Actions Runner**: v2.415.0
